@@ -12,7 +12,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import Image from "next/image";
+
 import { Label } from "@/components/ui/label";
 import { Zap, Share2 } from "lucide-react";
 
@@ -148,11 +148,9 @@ export default function PersonalityAnalyzer() {
 				</Link>
 				<CardContent className="space-y-6 mt-6">
 					<div className="flex flex-col items-center">
-						<Image
+						<img
 							src={userData.userPicture || ""}
 							alt="User Icon"
-							width={128}
-							height={128}
 							className=" h-32 rounded-full"
 						/>
 						<div className="text-purple-100 text-center">
