@@ -1,116 +1,121 @@
-import WebSocket from "ws"; // 修正: デフォルトインポートに変更
+import { NextRequest, NextResponse } from "next/server";
+import WebSocket from "ws";
 import { nip19 } from "nostr-tools";
-import { NextResponse } from "next/server";
 
-function cleanContent(content: string) {
-	// 型を指定
-	content = content.replace(/https?:\/\/\S+/g, "");
-	content = content.replace(/nostr:note\S+/g, "");
-	return content
-		.split("\n")
-		.filter((line) => line.trim() !== "")
-		.join("\n")
-		.trim();
+interface RequestBody {
+	npub: string;
+	relayUrl: string;
 }
 
-function queryRelay(relay: string, pubkey: string) {
-	// 型を指定
+interface NostrEvent {
+	id: string;
+	pubkey: string;
+	created_at: number;
+	kind: number;
+	tags: string[][];
+	content: string;
+	sig: string;
+}
+
+interface UserData {
+	account_id: string;
+	profile_picture_url: string;
+	content: string;
+}
+
+export async function POST(request: NextRequest) {
+	try {
+		const body: RequestBody = await request.json();
+		const { npub, relayUrl } = body;
+		if (!npub || !relayUrl) {
+			return NextResponse.json(
+				{ message: "Missing npub or relayUrl in the request body" },
+				{ status: 400 }
+			);
+		}
+		const pubkey = nip19.decode(npub).data as string;
+		const userData = await fetchNostrUserData(pubkey, relayUrl);
+		return NextResponse.json(userData);
+	} catch (error) {
+		console.error("Error fetching user data:", error);
+		return NextResponse.json(
+			{ message: "Internal Server Error", error: (error as Error).message },
+			{ status: 500 }
+		);
+	}
+}
+
+function removeUrls(text: string): string {
+	// This regex matches URLs and nostr: protocol links
+	const urlRegex = /(https?:\/\/[^\s]+)|(nostr:[^\s]+)/g;
+	return text.replace(urlRegex, "").trim();
+}
+
+async function fetchNostrUserData(
+	pubkey: string,
+	relayUrl: string
+): Promise<UserData> {
 	return new Promise((resolve, reject) => {
-		const ws = new WebSocket(relay);
+		const ws = new WebSocket(relayUrl);
+		const userData: UserData = {
+			account_id: pubkey,
+			profile_picture_url: "",
+			content: "",
+		};
+		const contents: string[] = [];
+
 		ws.on("open", () => {
 			const subId = Math.random().toString(36).substring(2, 15);
-			const req = JSON.stringify([
+			const requestEvent: [string, string, object] = [
 				"REQ",
 				subId,
 				{
 					authors: [pubkey],
-					kinds: [0, 1],
-					limit: 3000,
+					kinds: [0, 1], // kind 0 for metadata, kind 1 for posts
+					limit: 100,
 				},
-			]);
-			ws.send(req);
+			];
+			ws.send(JSON.stringify(requestEvent));
+			console.log("Request sent:", requestEvent);
 		});
-		const events = {
-			metadata: null,
-			posts: [] as string[], // ここで型を指定
-		};
-		const timeout = setTimeout(() => {
-			ws.close();
-			resolve(events);
-		}, 10000); // 10秒のタイムアウト
-		ws.on("message", (data: WebSocket.Data) => {
-			// 型を指定
-			const message = JSON.parse(data.toString()); // Bufferを文字列に変換
-			if (message[0] === "EVENT" && message[2]) {
-				if (message[2].kind === 0) {
-					events.metadata = message[2];
-				} else if (message[2].kind === 1) {
-					const cleanedContent = cleanContent(message[2].content);
-					if (cleanedContent) {
-						events.posts.push(cleanedContent);
+
+		ws.on("message", (data: WebSocket.RawData) => {
+			const [eventType, , event]: [string, unknown, NostrEvent] = JSON.parse(
+				data.toString()
+			);
+			if (eventType === "EVENT") {
+				if (event.kind === 0) {
+					// Metadata event
+					const metadata = JSON.parse(event.content);
+					userData.profile_picture_url = metadata.picture || "";
+				} else if (event.kind === 1) {
+					// Post event
+					const cleanContent = removeUrls(event.content);
+					if (cleanContent) {
+						contents.push(cleanContent);
 					}
 				}
+			} else if (eventType === "EOSE") {
+				// End of Stored Events
+				userData.content = contents.join("\n");
+				ws.close();
+				resolve(userData);
 			}
 		});
-		ws.on("close", () => {
-			clearTimeout(timeout);
-			resolve(events);
-		});
-		ws.on("error", (error) => {
+
+		ws.on("error", (error: Error) => {
 			reject(error);
 		});
-	});
-}
 
-export async function POST(request: Request) {
-	const req = await request.json();
-
-	console.log("=========================res.query", req);
-	if (!req || typeof req.npub !== "string") {
-		// 修正: npubの型チェックを追加
-		return NextResponse.json({
-			error: `Missing or invalid npub parameter: ${req}`,
-		});
-	}
-
-	try {
-		const pubkey: any = nip19.decode(req.npub).data; // 修正: req.npubを使用
-		const relays = ["wss://relay.damus.io"];
-		let accountInfo: { name?: string; created_at?: string } | null = null; // 型を指定
-		let allPosts: string[] = []; // 型を指定
-
-		for (const relay of relays) {
-			try {
-				const events: any = await queryRelay(relay, pubkey);
-				if (events.metadata && !accountInfo) {
-					const parsedContent = JSON.parse(events.metadata.content as string); // 型アサーションを追加
-					accountInfo = {
-						name: parsedContent.name || parsedContent.display_name,
-						created_at: new Date(
-							events.metadata.created_at * 1000
-						).toISOString(),
-					};
-				}
-				allPosts = allPosts.concat(events.posts);
-			} catch (error) {
-				console.error(`Error querying ${relay}:`, error);
+		// Set a timeout in case the relay doesn't respond
+		setTimeout(() => {
+			ws.close();
+			if (contents.length > 0 || userData.profile_picture_url) {
+				userData.content = contents.join("\n");
+				resolve(userData);
+			} else {
+				reject(new Error("Timeout while fetching user data"));
 			}
-		}
-
-		// 重複を削除
-		const uniquePosts = [...new Set(allPosts)];
-
-		// JSONオブジェクトを作成
-		const result = {
-			account: accountInfo,
-			posts: uniquePosts,
-		};
-
-		NextResponse.json(result);
-	} catch (error) {
-		console.error("Error processing request:", error);
-		NextResponse.json({ error: "Internal Server Error" });
-	}
-
-	return NextResponse.json({ message: "Hello, World!" });
+		}, 30000); // 30 seconds timeout
+	});
 }
