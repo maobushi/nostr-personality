@@ -61,6 +61,7 @@ export default function PersonalityAnalyzer() {
 				)
 				.eq("user_npub", pathname)
 				.single();
+			console.log("Data:", data);
 
 			if (error) {
 				console.error("Error fetching user data:", error);
@@ -148,11 +149,10 @@ export default function PersonalityAnalyzer() {
 				<CardContent className="space-y-6 mt-6">
 					<div className="flex flex-col items-center">
 						<Image
-							src={
-								userData.userPicture ||
-								"https://image.nostr.build/ba439818fe712a3740d1c1ec218474c5153f5161d72379510a62ff35696c6950.jpg"
-							}
+							src={userData.userPicture || ""}
 							alt="User Icon"
+							width={128}
+							height={128}
 							className=" h-32 rounded-full"
 						/>
 						<div className="text-purple-100 text-center">
