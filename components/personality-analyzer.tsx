@@ -22,7 +22,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Zap, Sparkles, Share2 } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 export function PersonalityAnalyzer() {
 	const systemMessage: string = `
@@ -54,7 +54,6 @@ Example output style (when the determined language is Japanese):
 	const [relay, setRelay] = useState("relay.damus.io");
 	const [customRelay, setCustomRelay] = useState("");
 	const [showCustomRelayInput, setShowCustomRelayInput] = useState(false);
-	const [analysis, setAnalysis] = useState<Record<string, string>>({});
 	const [isAnalyzing, setIsAnalyzing] = useState(false);
 
 	const router = useRouter(); // ここでエラーが発生している
@@ -81,7 +80,8 @@ Example output style (when the determined language is Japanese):
 			document.body.removeChild(starsContainer);
 		};
 	}, []);
-	const handleRelayChange = (value) => {
+	const handleRelayChange = (value: string) => {
+		// 型を明示的に指定
 		if (value === "custom") {
 			setShowCustomRelayInput(true);
 			setRelay("");
@@ -91,7 +91,8 @@ Example output style (when the determined language is Japanese):
 		}
 	};
 
-	const handleCustomRelayChange = (e) => {
+	const handleCustomRelayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		// 型を明示的に指定
 		setCustomRelay(e.target.value);
 		setRelay(e.target.value);
 	};
@@ -107,7 +108,7 @@ Example output style (when the determined language is Japanese):
 		setIsAnalyzing(true);
 
 		// Fetch Nostr data
-		const { data, error } = await supabase
+		const { error } = await supabase
 			.from("user_table")
 			.select(
 				"user_id, user_npub, user_picture, user_abst,  relay_server,user_roast"
@@ -157,7 +158,7 @@ Example output style (when the determined language is Japanese):
 					const abstruction = parsedContent.abstruction;
 					const content = parsedContent.content;
 					// Insert data into Supabase
-					const { data, error } = await supabase.from("user_table").insert({
+					await supabase.from("user_table").insert({
 						relay_server: relay,
 						user_abst: abstruction, // First 200 characters as abstract
 						user_id: nostrData.username,
@@ -185,27 +186,6 @@ Example output style (when the determined language is Japanese):
 			}
 		}
 		router.push(`/${publicKey}`);
-	};
-
-	const handleShare = () => {
-		const shareText = `Check out my Nostr Personality Analysis!\n\nRoast: ${analysis.roast}\n\nAnalyze your own Nostr personality at https://nostr-analyzer.example.com`;
-		if (navigator.share) {
-			navigator
-				.share({
-					title: "My Nostr Personality Analysis",
-					text: shareText,
-					url: "https://nostr-analyzer.example.com",
-				})
-				.catch((error) => console.log("Error sharing", error));
-		} else {
-			// Fallback for browsers that don't support the Web Share API
-			navigator.clipboard
-				.writeText(shareText)
-				.then(() => {
-					alert("Analysis copied to clipboard! Share it with your friends.");
-				})
-				.catch((error) => console.log("Error copying to clipboard", error));
-		}
 	};
 
 	return (
@@ -348,34 +328,6 @@ Example output style (when the determined language is Japanese):
 							)}
 						</Button>
 					</div>
-					{analysis.roast && (
-						<div className="mt-6 space-y-4 animate-fadeIn">
-							<div className="space-y-2">
-								<Label className="text-purple-300 text-lg font-semibold">
-									Roast
-								</Label>
-								<div className="bg-gray-800/50 border border-purple-500 rounded-lg p-4 text-purple-100">
-									{analysis.roast}
-								</div>
-							</div>
-						</div>
-					)}
-					{analysis.roast && (
-						<Button
-							onClick={() => setIsPremium(true)}
-							className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg hover:shadow-orange-500/50 transition-all duration-300 transform hover:scale-105"
-						>
-							Donate <Zap className="ml-2 h-4 w-4 animate-pulse" />
-						</Button>
-					)}
-					{analysis.roast && (
-						<Button
-							onClick={handleShare}
-							className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg hover:shadow-blue-500/50 transition-all duration-300 transform hover:scale-105"
-						>
-							Share Analysis <Share2 className="ml-2 h-4 w-4" />
-						</Button>
-					)}
 				</CardContent>
 				<CardFooter className="text-center text-purple-400 text-sm">
 					Made by @maobushi
