@@ -21,7 +21,6 @@ type UserData = {
 	userPicture: string;
 	userAbst: string;
 	userRoast: string;
-	userLanguage: string;
 	relayServer: string;
 };
 
@@ -57,9 +56,9 @@ export default function PersonalityAnalyzer() {
 			const { data, error } = await supabase
 				.from("user_table")
 				.select(
-					"user_id, user_npub, user_picture, user_abst, user_roast, user_language, relay_server"
+					"user_id, user_npub, user_picture, user_abst, user_roast, relay_server"
 				)
-				.eq("user_id", pathname)
+				.eq("user_npub", pathname)
 				.single();
 
 			if (error) {
@@ -85,10 +84,9 @@ export default function PersonalityAnalyzer() {
 				userPicture: data.user_picture,
 				userAbst: data.user_abst,
 				userRoast: data.user_roast,
-				userLanguage: data.user_language,
 				relayServer: data.relay_server,
 			};
-			console.log("User data:", formattedUserData);
+			// console.log("User data:", formattedUserData);
 			setUserData(formattedUserData);
 			setLoading(false);
 		};
@@ -142,7 +140,7 @@ export default function PersonalityAnalyzer() {
 							Nostr Personality Analyzer
 						</CardTitle>
 						<CardDescription className="text-center text-purple-300">
-							Discover insights from your Nostr tweets
+							Discover insights from your Nostr posts
 						</CardDescription>
 					</CardHeader>
 				</Link>
@@ -154,10 +152,10 @@ export default function PersonalityAnalyzer() {
 								"https://image.nostr.build/ba439818fe712a3740d1c1ec218474c5153f5161d72379510a62ff35696c6950.jpg"
 							}
 							alt="User Icon"
-							className="w-32 h-32 rounded-full"
+							className=" h-32 rounded-full"
 						/>
 						<div className="text-purple-100 text-center">
-							<h2 className="text-2xl font-bold py-2">{userData.userId}</h2>
+							<h2 className="text-2xl font-bold py-2">@{userData.userId}</h2>
 							<div
 								className="text-sm font-semibold py-2 cursor-pointer hover:text-purple-300"
 								onClick={() => {

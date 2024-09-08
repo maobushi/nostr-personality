@@ -12,33 +12,30 @@ export type Database = {
       user_table: {
         Row: {
           created_at: string
-          id: number
+          id: string
           relay_server: string | null
           user_abst: string | null
           user_id: string | null
-          user_language: string | null
           user_npub: string | null
           user_picture: string | null
           user_roast: string | null
         }
         Insert: {
           created_at?: string
-          id?: number
+          id?: string
           relay_server?: string | null
           user_abst?: string | null
           user_id?: string | null
-          user_language?: string | null
           user_npub?: string | null
           user_picture?: string | null
           user_roast?: string | null
         }
         Update: {
           created_at?: string
-          id?: number
+          id?: string
           relay_server?: string | null
           user_abst?: string | null
           user_id?: string | null
-          user_language?: string | null
           user_npub?: string | null
           user_picture?: string | null
           user_roast?: string | null

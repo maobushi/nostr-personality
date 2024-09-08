@@ -3,8 +3,15 @@ const openai = new OpenAI({ apiKey: process.env["OPENAI_API_KEY"] });
 
 import { NextResponse } from "next/server";
 
+// resuest body
+// interface Request {
+// 	json(): Promise<{
+// 		systemMessage: string;
+// 		userMessage: string;
+// 	}>;
+// }
 export async function POST(request: Request) {
-	console.log("request received");
+	// console.log("request received");
 	const res = await request.json();
 	const completion = await openai.chat.completions.create({
 		model: "gpt-4o-mini",
@@ -16,7 +23,7 @@ export async function POST(request: Request) {
 			},
 		],
 	});
-	console.log(completion.choices[0].message);
+	// console.log(completion.choices[0].message);
 	return NextResponse.json({
 		message: completion.choices[0].message,
 	});

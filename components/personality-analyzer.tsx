@@ -1,8 +1,9 @@
 "use client";
-
+import supabase from "@/app/utils/supabase/client";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation"; // 修正: useRouterを正しくインポート
 import Link from "next/link";
 import {
 	Card,
@@ -24,12 +25,39 @@ import {
 import { Zap, Sparkles, Share2 } from "lucide-react";
 
 export function PersonalityAnalyzer() {
+	const systemMessage: string = `
+
+You are a sarcastic personality analyst. Your task is to analyze a set of posts provided in JSON format and create a witty, sarcastic personality assessment of the post author. Follow these guidelines:
+1. Carefully read and analyze each post in the provided JSON data.
+2. Create a comprehensive personality assessment based on the content and style of the posts.
+3. Determine the user's native language based on the language used in the posts. If the language is unclear or mixed, default to English.
+4. Your response MUST be in the user's native language as determined in step 3. This is crucial.
+5. Your response must be in JSON format with two keys: "abstruction" and "content".
+6. In the "abstruction" field, provide a brief, unbiased summary of the user's characteristics in about 200 characters based on the given information.
+7. In the "content" field, include your sarcastic personality assessment.
+8. Make extensive use of quotes from the posts to support your analysis.
+9. Use indirect and subtle language to deliver strong, humorous sarcasm.
+10. Be critical in your evaluation, but maintain a clever and entertaining tone.
+11. Avoid explicit insults or offensive language. Instead, use clever wordplay and implied meanings.
+12. Reference specific details from the posts to make your analysis more pointed and personal.
+13. Draw amusing parallels between the post content and broader life observations.
+14. Subtly question the author's self-awareness, intelligence, or social skills through your analysis.
+15. Maintain a pseudo-professional tone while delivering your sarcastic assessment.
+16. This service is Nostr, not Twitter.
+17. Ensure that your entire response, including any examples or explanations, is in the user's native language as determined in step 3.
+Example output style (when the determined language is Japanese):
+{
+  "abstruction": "AIエージェントによるノスト投稿分析に基づくと、ぶしおbotは30代の男性で、テクノロジーと暗号通貨に精通したフリーランスのエンジニアです。ユーモアのセンスがあり、皮肉な観察力を持っています。",
+  "content": "ぶしおbotさん、あなたの投稿を見ていると、まるで暗号通貨の価格チャートのようですね。上がったり下がったりして、結局何も残らない。自己紹介が長すぎて書けないって言ってますが、実は書くことがないだけじゃないですか？ノストラダムスの予言より曖昧な投稿ばかりで、フォロワーは解読に疲れ果てているでしょう。ハリーポッターのイベントに一人で参加するなんて、魔法使いになりたい中二病かと思いました。ベトナムの湿度に文句言ってますが、あなたの存在感の方がよっぽど薄いですよ。写真を捨てる話、まるで恋愛経験がないかのような書き方ですね。結局、あなたの人生も、投稿と同じくらい中身がないんじゃないですか？"
+}`;
 	const [publicKey, setPublicKey] = useState("");
 	const [relay, setRelay] = useState("relay.damus.io");
-	const [language, setLanguage] = useState("en");
+	const [customRelay, setCustomRelay] = useState("");
+	const [showCustomRelayInput, setShowCustomRelayInput] = useState(false);
 	const [analysis, setAnalysis] = useState<Record<string, string>>({});
 	const [isAnalyzing, setIsAnalyzing] = useState(false);
 
+	const router = useRouter(); // ここでエラーが発生している
 	useEffect(() => {
 		const stars = 50;
 		const starsContainer = document.createElement("div");
@@ -53,22 +81,110 @@ export function PersonalityAnalyzer() {
 			document.body.removeChild(starsContainer);
 		};
 	}, []);
-
-	const handleAnalyze = () => {
-		// 公開鍵の形式をチェック
-		const publicKeyPattern = /^npub1[a-zA-Z0-9]{58}$/; // 例: npub1から始まる58文字の英数字
-		if (!publicKey || !publicKeyPattern.test(publicKey)) {
-			alert("有効な公開鍵を入力してください。"); // エラーメッセージ
-			return; // 公開鍵が無効な場合は処理を中断
+	const handleRelayChange = (value) => {
+		if (value === "custom") {
+			setShowCustomRelayInput(true);
+			setRelay("");
+		} else {
+			setShowCustomRelayInput(false);
+			setRelay(value);
 		}
+	};
+
+	const handleCustomRelayChange = (e) => {
+		setCustomRelay(e.target.value);
+		setRelay(e.target.value);
+	};
+
+	const handleAnalyze = async () => {
+		// Public key validation
+		const publicKeyPattern = /^npub1[a-zA-Z0-9]{58}$/;
+		if (!publicKey || !publicKeyPattern.test(publicKey)) {
+			alert("有効な公開鍵を入力してください。");
+			return;
+		}
+
 		setIsAnalyzing(true);
-		setTimeout(() => {
-			setAnalysis({
-				roast:
-					"Your tweets are as decentralized as your personality - scattered all over the place and hard to make sense of.",
-			});
-			setIsAnalyzing(false);
-		}, 3000);
+
+		// Fetch Nostr data
+		const { data, error } = await supabase
+			.from("user_table")
+			.select(
+				"user_id, user_npub, user_picture, user_abst,  relay_server,user_roast"
+			)
+			.eq("user_npub", publicKey)
+			.single();
+
+		if (error) {
+			console.error("Error fetching user data:", error);
+
+			if (error.code === "PGRST116") {
+				console.log("User does not exist.");
+				try {
+					const nostr_response = await fetch("/api/nostr", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							npub: publicKey,
+							relayUrl: `wss://${relay}`,
+						}),
+					});
+
+					if (!nostr_response.ok) {
+						throw new Error("Failed to fetch Nostr data");
+					}
+
+					const nostrData = await nostr_response.json();
+
+					// Process with GPT
+					const gpt_response = await fetch("/api/openai", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							systemMessage: systemMessage,
+							userMessage: `"user_name:"${nostrData.username}, "content:"${nostrData.content}`,
+						}),
+					});
+
+					if (!gpt_response.ok) {
+						throw new Error("Failed to process with GPT");
+					}
+
+					const gptData = await gpt_response.json();
+					const parsedContent = JSON.parse(gptData.message.content);
+
+					// abstructionとcontentを取得
+					const abstruction = parsedContent.abstruction;
+					const content = parsedContent.content;
+					// Insert data into Supabase
+					const { data, error } = await supabase.from("user_table").insert({
+						relay_server: relay,
+						user_abst: abstruction, // First 200 characters as abstract
+						user_id: nostrData.username,
+						// user_language: language,
+						user_npub: publicKey,
+						user_picture: nostrData.profile_picture_url,
+						user_roast: content,
+					});
+					// console.log(relay);
+					//console.log(abstruction);
+					//console.log(nostrData.username);
+					// //console.log(language);
+					//console.log(publicKey);
+					//console.log(nostrData.profile_picture_url);
+					//console.log(content);
+					//console.log(gptData);
+
+					// if (error) throw error;
+				} catch (error) {
+					console.error("Error during analysis:", error);
+					alert("An error occurred during analysis. Please try again.");
+				} finally {
+					setIsAnalyzing(false);
+				}
+			}
+		}
+		router.push(`/${publicKey}`);
 	};
 
 	const handleShare = () => {
@@ -103,7 +219,7 @@ export function PersonalityAnalyzer() {
 							Nostr Personality Analyzer
 						</CardTitle>
 						<CardDescription className="text-center text-purple-300">
-							Discover insights from your Nostr tweets
+							Discover insights from your Nostr posts
 						</CardDescription>
 					</CardHeader>
 				</Link>
@@ -120,13 +236,13 @@ export function PersonalityAnalyzer() {
 							className="bg-gray-800/50 border-purple-500 text-purple-100 placeholder-purple-400 focus:ring-2 focus:ring-purple-500 transition-all duration-300"
 						/>
 					</div>
-					{publicKey && ( // 公開鍵が入力されている場合のみ表示
+					{publicKey && (
 						<div className="flex justify-between items-center space-x-4">
 							<div className="flex-1">
 								<Label htmlFor="relay" className="text-purple-300">
 									Relay
 								</Label>
-								<Select value={relay} onValueChange={setRelay}>
+								<Select value={relay} onValueChange={handleRelayChange}>
 									<SelectTrigger className="bg-gray-800/50 border-purple-500 text-purple-100 focus:ring-2 focus:ring-purple-500 transition-all duration-300">
 										<SelectValue placeholder="Select Relay" />
 									</SelectTrigger>
@@ -184,10 +300,19 @@ export function PersonalityAnalyzer() {
 											nostr1.current.fyi
 										</SelectItem>
 										<SelectItem value="nostr.lu.ke">nostr.lu.ke</SelectItem>
+										<SelectItem value="custom">Add custom relay</SelectItem>
 									</SelectContent>
 								</Select>
+								{showCustomRelayInput && (
+									<Input
+										placeholder="Enter custom relay URL (example.com)"
+										value={customRelay}
+										onChange={handleCustomRelayChange}
+										className="mt-2 bg-gray-800/50 border-purple-500 text-purple-100 placeholder-purple-400 focus:ring-2 focus:ring-purple-500 transition-all duration-300"
+									/>
+								)}
 							</div>
-							<div className="flex-1">
+							{/* <div className="flex-1">
 								<Label htmlFor="language" className="text-purple-300">
 									Language
 								</Label>
@@ -196,16 +321,16 @@ export function PersonalityAnalyzer() {
 										<SelectValue placeholder="Select Language" />
 									</SelectTrigger>
 									<SelectContent>
-										<SelectItem value="en">English</SelectItem>
-										<SelectItem value="zh">中文</SelectItem>
-										<SelectItem value="jp">日本語</SelectItem>
-										<SelectItem value="es">Español</SelectItem>
-										<SelectItem value="fr">Français</SelectItem>
-										<SelectItem value="de">Deutsch</SelectItem>
-										<SelectItem value="ko">한국어</SelectItem>
+										<SelectItem value="English">English</SelectItem>
+										<SelectItem value="中文">中文</SelectItem>
+										<SelectItem value="日本語">日本語</SelectItem>
+										<SelectItem value="Español">Español</SelectItem>
+										<SelectItem value="Français">Français</SelectItem>
+										<SelectItem value="Deutsch">Deutsch</SelectItem>
+										<SelectItem value="한국어">한국어</SelectItem>
 									</SelectContent>
 								</Select>
-							</div>
+							</div> */}
 						</div>
 					)}
 					<div className="flex space-x-4">
@@ -258,4 +383,4 @@ export function PersonalityAnalyzer() {
 			</Card>
 		</div>
 	);
-}
+};

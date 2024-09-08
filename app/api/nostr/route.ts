@@ -21,6 +21,8 @@ interface UserData {
 	account_id: string;
 	profile_picture_url: string;
 	content: string;
+	username: string;
+	decoded_pubkey: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -33,11 +35,11 @@ export async function POST(request: NextRequest) {
 				{ status: 400 }
 			);
 		}
+
 		const pubkey = nip19.decode(npub).data as string;
 		const userData = await fetchNostrUserData(pubkey, relayUrl);
 		return NextResponse.json(userData);
 	} catch (error) {
-		console.error("Error fetching user data:", error);
 		return NextResponse.json(
 			{ message: "Internal Server Error", error: (error as Error).message },
 			{ status: 500 }
@@ -46,9 +48,12 @@ export async function POST(request: NextRequest) {
 }
 
 function removeUrls(text: string): string {
-	// This regex matches URLs and nostr: protocol links
 	const urlRegex = /(https?:\/\/[^\s]+)|(nostr:[^\s]+)/g;
 	return text.replace(urlRegex, "").trim();
+}
+
+function removeNostrOxtrDev(text: string): string {
+	return text.replace(/nostr\.oxtr\.dev/g, "").trim();
 }
 
 async function fetchNostrUserData(
@@ -61,45 +66,74 @@ async function fetchNostrUserData(
 			account_id: pubkey,
 			profile_picture_url: "",
 			content: "",
+			username: "",
+			decoded_pubkey: nip19.npubEncode(pubkey),
 		};
 		const contents: string[] = [];
+		let metadataReceived = false;
+		let postsReceived = false;
 
 		ws.on("open", () => {
 			const subId = Math.random().toString(36).substring(2, 15);
-			const requestEvent: [string, string, object] = [
+			const requestMetadata: [string, string, object] = [
 				"REQ",
-				subId,
+				`${subId}_metadata`,
 				{
 					authors: [pubkey],
-					kinds: [0, 1], // kind 0 for metadata, kind 1 for posts
-					limit: 100,
+					kinds: [0],
+					limit: 1,
 				},
 			];
-			ws.send(JSON.stringify(requestEvent));
-			console.log("Request sent:", requestEvent);
+			const requestPosts: [string, string, object] = [
+				"REQ",
+				`${subId}_posts`,
+				{
+					authors: [pubkey],
+					kinds: [1],
+					limit: 1500,
+				},
+			];
+			ws.send(JSON.stringify(requestMetadata));
+			ws.send(JSON.stringify(requestPosts));
 		});
 
 		ws.on("message", (data: WebSocket.RawData) => {
-			const [eventType, , event]: [string, unknown, NostrEvent] = JSON.parse(
-				data.toString()
-			);
-			if (eventType === "EVENT") {
-				if (event.kind === 0) {
-					// Metadata event
-					const metadata = JSON.parse(event.content);
-					userData.profile_picture_url = metadata.picture || "";
-				} else if (event.kind === 1) {
-					// Post event
-					const cleanContent = removeUrls(event.content);
-					if (cleanContent) {
-						contents.push(cleanContent);
+			try {
+				const [eventType, subId, event]: [string, string, NostrEvent] =
+					JSON.parse(data.toString());
+
+				if (eventType === "EVENT") {
+					if (event.kind === 0 && subId.endsWith("_metadata")) {
+						metadataReceived = true;
+						try {
+							const metadata = JSON.parse(event.content);
+							userData.profile_picture_url = metadata.picture || "";
+							userData.username = metadata.name || metadata.displayName || "";
+						} catch (error) {
+							// Error handling for metadata parsing
+						}
+					} else if (event.kind === 1 && subId.endsWith("_posts")) {
+						const cleanContent = removeUrls(event.content);
+						const finalContent = removeNostrOxtrDev(cleanContent);
+						if (finalContent) {
+							contents.push(finalContent);
+						}
+					}
+				} else if (eventType === "EOSE") {
+					if (subId.endsWith("_metadata")) {
+						metadataReceived = true;
+					} else if (subId.endsWith("_posts")) {
+						postsReceived = true;
+					}
+
+					if (metadataReceived && postsReceived) {
+						userData.content = contents.join("\n");
+						ws.close();
+						resolve(userData);
 					}
 				}
-			} else if (eventType === "EOSE") {
-				// End of Stored Events
-				userData.content = contents.join("\n");
-				ws.close();
-				resolve(userData);
+			} catch (error) {
+				// Error handling for message processing
 			}
 		});
 
@@ -107,15 +141,22 @@ async function fetchNostrUserData(
 			reject(error);
 		});
 
-		// Set a timeout in case the relay doesn't respond
+		ws.on("close", () => {
+			// WebSocket closed
+		});
+
 		setTimeout(() => {
 			ws.close();
-			if (contents.length > 0 || userData.profile_picture_url) {
+			if (
+				contents.length > 0 ||
+				userData.profile_picture_url ||
+				userData.username
+			) {
 				userData.content = contents.join("\n");
 				resolve(userData);
 			} else {
 				reject(new Error("Timeout while fetching user data"));
 			}
-		}, 30000); // 30 seconds timeout
+		}, 60000); // 60 seconds timeout
 	});
 }
