@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import {
 	Card,
 	CardContent,
@@ -96,14 +97,16 @@ export function PersonalityAnalyzer() {
 			<div className="absolute inset-0 bg-[url('/placeholder.svg?height=800&width=800')] bg-repeat opacity-10 z-0"></div>
 			<Card className="w-full max-w-4xl bg-gray-900/80 text-purple-50 border-purple-500 shadow-2xl shadow-purple-500/20 backdrop-blur-sm relative overflow-hidden z-10">
 				<div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 animate-gradient"></div>
-				<CardHeader className="border-b border-purple-700">
-					<CardTitle className="text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
-						Nostr Personality Analyzer
-					</CardTitle>
-					<CardDescription className="text-center text-purple-300">
-						Discover insights from your Nostr tweets
-					</CardDescription>
-				</CardHeader>
+				<Link href="/">
+					<CardHeader className="border-b border-purple-700">
+						<CardTitle className="text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
+							Nostr Personality Analyzer
+						</CardTitle>
+						<CardDescription className="text-center text-purple-300">
+							Discover insights from your Nostr tweets
+						</CardDescription>
+					</CardHeader>
+				</Link>
 				<CardContent className="space-y-6 mt-6">
 					<div className="space-y-2">
 						<Label htmlFor="publicKey" className="text-purple-300">
