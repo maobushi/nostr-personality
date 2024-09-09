@@ -133,31 +133,31 @@ export default function PersonalityAnalyzer() {
   return (
 		<div className="min-h-screen bg-gradient-to-br from-black via-purple-900 to-black flex items-center justify-center p-4 overflow-x-hidden">
 			<div className="absolute inset-0 bg-[url('/placeholder.svg?height=800&width=800')] bg-repeat opacity-10 z-0"></div>
-			<Card className="w-full max-w-md bg-gray-900/80 text-purple-50 border-purple-500 shadow-2xl shadow-purple-500/20 backdrop-blur-sm relative overflow-hidden z-10">
+			<Card className="w-full max-w-sm md:max-w-2xl lg:max-w-4xl bg-gray-900/80 text-purple-50 border-purple-500 shadow-2xl shadow-purple-500/20 backdrop-blur-sm relative overflow-hidden z-10">
 				<div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 animate-gradient"></div>
 				<Link href="/">
 					<CardHeader className="border-b border-purple-700">
-						<CardTitle className="text-2xl md:text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
+						<CardTitle className="text-2xl md:text-4xl lg:text-5xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
 							Nostr Personality Analyzer
 						</CardTitle>
-						<CardDescription className="text-center text-purple-300 text-sm md:text-base">
+						<CardDescription className="text-center text-purple-300 text-sm md:text-base lg:text-lg">
 							Discover insights from your Nostr posts
 						</CardDescription>
 					</CardHeader>
 				</Link>
-				<CardContent className="space-y-4 mt-4">
-					<div className="flex flex-col items-center">
+				<CardContent className="space-y-4 mt-4 md:mt-6 lg:mt-8">
+					<div className="flex flex-col md:flex-row items-center md:space-x-6">
 						<img
 							src={userData.userPicture || "/image.png"}
 							alt="User Icon"
-							className="h-24 md:h-32 rounded-full"
+							className="h-24 md:h-32 lg:h-40 rounded-full"
 						/>
-						<div className="text-purple-100 text-center">
-							<h2 className="text-xl md:text-2xl font-bold py-2">
+						<div className="text-purple-100 text-center md:text-left mt-4 md:mt-0">
+							<h2 className="text-xl md:text-2xl lg:text-3xl font-bold py-2">
 								@{userData.userId}
 							</h2>
 							<div
-								className="text-xs md:text-sm font-semibold py-1 cursor-pointer hover:text-purple-300"
+								className="text-xs md:text-sm lg:text-base font-semibold py-1 cursor-pointer hover:text-purple-300"
 								onClick={() => {
 									navigator.clipboard.writeText(userData.userNpub).then(() => {
 										setCopySuccess(true);
@@ -168,41 +168,42 @@ export default function PersonalityAnalyzer() {
 								#{userData.userNpub}
 							</div>
 							{copySuccess && (
-								<p className="text-green-500 py-1 text-xs">Copied npub!</p>
+								<p className="text-green-500 py-1 text-xs md:text-sm">Copied npub!</p>
 							)}
-							<p className="text-xs md:text-sm">{userData.userAbst}</p>
+							<p className="text-xs md:text-sm lg:text-base">{userData.userAbst}</p>
 						</div>
 					</div>
 					<div className="space-y-2">
-						<Label className="text-purple-300 text-base md:text-lg font-semibold">
+						<Label className="text-purple-300 text-base md:text-lg lg:text-xl font-semibold">
 							Roast
 						</Label>
-						<div className="bg-gray-800/50 border border-purple-500 rounded-lg p-3 text-purple-100 text-sm">
+						<div className="bg-gray-800/50 border border-purple-500 rounded-lg p-3 md:p-4 lg:p-5 text-purple-100 text-sm md:text-base lg:text-lg">
 							{userData.userRoast}
 						</div>
 					</div>
-					<Button
-						onClick={handleDonate}
-						className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg hover:shadow-orange-500/50 transition-all duration-300 transform hover:scale-105"
-					>
-						Donate <Zap className="ml-2 h-4 w-4 animate-pulse" />
-					</Button>
-					<Button
-						onClick={handleShare}
-						className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg hover:shadow-blue-500/50 transition-all duration-300 transform hover:scale-105"
-					>
-						Share Analysis <Share2 className="ml-2 h-4 w-4" />
-					</Button>
+					<div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4">
+						<Button
+							onClick={handleDonate}
+							className="w-full md:w-1/2 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg hover:shadow-orange-500/50 transition-all duration-300 transform hover:scale-105"
+						>
+							Donate <Zap className="ml-2 h-4 w-4 animate-pulse" />
+						</Button>
+						<Button
+							onClick={handleShare}
+							className="w-full md:w-1/2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg hover:shadow-blue-500/50 transition-all duration-300 transform hover:scale-105"
+						>
+							Share Analysis <Share2 className="ml-2 h-4 w-4" />
+						</Button>
+					</div>
 				</CardContent>
-				<div className="flex ">
+				<div className="flex flex-col md:flex-row md:justify-between md:items-center p-4">
 					<Link href="https://x.com/maobushi">
-						<CardFooter className="text-center text-purple-400 text-sm">
-							ade by @maobushi
+						<CardFooter className="text-center md:text-left text-purple-400 text-xs md:text-sm">
+							Made by @maobushi
 						</CardFooter>
 					</Link>
 
-					<CardFooter className="text-center text-purple-400 text-sm">
-						Nostr:
+					<CardFooter className="text-center md:text-right text-purple-400 text-xs md:text-sm mt-2 md:mt-0">
 						#npub1kmwnwx58pl2fqjzpkqzk9ejuxev76xcv0yr9yenpnzx7te2kx46s93hlht
 					</CardFooter>
 				</div>
@@ -211,20 +212,20 @@ export default function PersonalityAnalyzer() {
 			<Dialog open={showDonatePopup} onOpenChange={setShowDonatePopup}>
 				<DialogContent className="bg-gray-900 text-purple-50 border-purple-500">
 					<DialogHeader>
-						<DialogTitle className="text-xl md:text-2xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
+						<DialogTitle className="text-xl md:text-2xl lg:text-3xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
 							Donate
 						</DialogTitle>
 					</DialogHeader>
 					<div className="space-y-4">
 						<div>
 							<Label className="text-purple-300">Bitcoin Address</Label>
-							<div className="bg-gray-800/50 border border-purple-500 rounded-lg p-2 text-purple-100 break-all text-xs md:text-sm">
+							<div className="bg-gray-800/50 border border-purple-500 rounded-lg p-2 text-purple-100 break-all text-xs md:text-sm lg:text-base">
 								bc1qmpsd298hs9anwetalnrntq55fen994mht60w5d
 							</div>
 						</div>
 						<div>
 							<Label className="text-purple-300">Lightning Network</Label>
-							<div className="bg-gray-800/50 border border-purple-500 rounded-lg p-2 text-purple-100 break-all text-xs md:text-sm">
+							<div className="bg-gray-800/50 border border-purple-500 rounded-lg p-2 text-purple-100 break-all text-xs md:text-sm lg:text-base">
 								secretbeef91@walletofsatoshi.com
 							</div>
 						</div>

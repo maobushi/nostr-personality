@@ -329,15 +329,14 @@ Example output style (when the determined language is Japanese):
 						</Button>
 					</div>
 				</CardContent>
-				<div className="flex ">
+				<div className="flex flex-col">
 					<Link href="https://x.com/maobushi">
-						<CardFooter className="text-center text-purple-400 text-sm">
+						<CardFooter className="text-center text-purple-400 text-xs">
 							Made by @maobushi
 						</CardFooter>
 					</Link>
 
-					<CardFooter className="text-center text-purple-400 text-sm">
-						Nostr:
+					<CardFooter className="text-left text-purple-400 text-xs">
 						#npub1kmwnwx58pl2fqjzpkqzk9ejuxev76xcv0yr9yenpnzx7te2kx46s93hlht
 					</CardFooter>
 				</div>
