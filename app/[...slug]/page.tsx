@@ -148,7 +148,7 @@ export default function PersonalityAnalyzer() {
 				<CardContent className="space-y-4 mt-4">
 					<div className="flex flex-col items-center">
 						<img
-							src={userData.userPicture || ""}
+							src={userData.userPicture || "/image.png"}
 							alt="User Icon"
 							className="h-24 md:h-32 rounded-full"
 						/>
@@ -194,11 +194,18 @@ export default function PersonalityAnalyzer() {
 						Share Analysis <Share2 className="ml-2 h-4 w-4" />
 					</Button>
 				</CardContent>
-				<Link href="https://x.com/maobushi">
-					<CardFooter className="text-center text-purple-400 text-xs md:text-sm">
-						Made by @maobushi
+				<div className="flex ">
+					<Link href="https://x.com/maobushi">
+						<CardFooter className="text-center text-purple-400 text-sm">
+							ade by @maobushi
+						</CardFooter>
+					</Link>
+
+					<CardFooter className="text-center text-purple-400 text-sm">
+						Nostr:
+						#npub1kmwnwx58pl2fqjzpkqzk9ejuxev76xcv0yr9yenpnzx7te2kx46s93hlht
 					</CardFooter>
-				</Link>
+				</div>
 			</Card>
 
 			<Dialog open={showDonatePopup} onOpenChange={setShowDonatePopup}>
