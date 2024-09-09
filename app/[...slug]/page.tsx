@@ -34,14 +34,15 @@ type UserData = {
 
 export default function PersonalityAnalyzer() {
   const router = useRouter();
-	const pathname = usePathname().replace(/^\/+/, "");
+  const pathname = usePathname().replace(/^\/+/, "");
 	const [loading, setLoading] = useState(true);
 	const [userData, setUserData] = useState<UserData | null>(null);
 	const [copySuccess, setCopySuccess] = useState(false);
 	const [showDonatePopup, setShowDonatePopup] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
 
-  useEffect(() => {
+	useEffect(() => {
 		const stars = 50;
 		const starsContainer = document.createElement("div");
 		starsContainer.className =
@@ -104,14 +105,33 @@ export default function PersonalityAnalyzer() {
 		fetchUserData();
 	}, [pathname, router]);
 
-  const handleShare = () => {
+	const handleShare = async () => {
 		if (!userData) return;
 
-		const currentUrl = window.location.href;
-		navigator.clipboard.writeText(currentUrl).then(() => {
+		const shareData = {
+			title: "Nostr Personality Analyzer",
+			text: `Check out ${userData.userId}'s personality analysis!`,
+			url: window.location.href,
+		};
+
+		if (navigator.share) {
+			try {
+				await navigator.share(shareData);
+				setToastMessage("Shared successfully!");
+				setShowToast(true);
+			} catch (err) {
+				console.error("Error sharing:", err);
+				await navigator.clipboard.writeText(window.location.href);
+				setToastMessage("URL Copied!");
+				setShowToast(true);
+			}
+		} else {
+			await navigator.clipboard.writeText(window.location.href);
+			setToastMessage("URL Copied!");
 			setShowToast(true);
-			setTimeout(() => setShowToast(false), 3000);
-		});
+		}
+
+		setTimeout(() => setShowToast(false), 3000);
 	};
 
   const handleDonate = () => {
@@ -152,7 +172,7 @@ export default function PersonalityAnalyzer() {
 							alt="User Icon"
 							className="h-24 md:h-32 lg:h-40 rounded-full"
 						/>
-						<div className="text-purple-100 text-center md:text-left mt-4 md:mt-0">
+						<div className="text-purple-100 text-center md:text-left mt-4 md:mt-0 w-full">
 							<h2 className="text-xl md:text-2xl lg:text-3xl font-bold py-2">
 								@{userData.userId}
 							</h2>
@@ -168,9 +188,13 @@ export default function PersonalityAnalyzer() {
 								#{userData.userNpub}
 							</div>
 							{copySuccess && (
-								<p className="text-green-500 py-1 text-xs md:text-sm">Copied npub!</p>
+								<p className="text-green-500 py-1 text-xs md:text-sm">
+									Copied npub!
+								</p>
 							)}
-							<p className="text-xs md:text-sm lg:text-base">{userData.userAbst}</p>
+							<p className="text-xs md:text-sm lg:text-base break-words">
+								{userData.userAbst}
+							</p>
 						</div>
 					</div>
 					<div className="space-y-2">
@@ -240,7 +264,7 @@ export default function PersonalityAnalyzer() {
 
 			{showToast && (
 				<Toast className="fixed bottom-4 right-4 bg-green-500 text-white p-2 rounded-md flex items-center">
-					<Check className="mr-2" /> URL Copied!
+					<Check className="mr-2" /> {toastMessage}
 				</Toast>
 			)}
 		</div>

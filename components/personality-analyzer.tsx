@@ -335,10 +335,6 @@ Example output style (when the determined language is Japanese):
 							Made by @maobushi
 						</CardFooter>
 					</Link>
-
-					<CardFooter className="text-left text-purple-400 text-xs">
-						#npub1kmwnwx58pl2fqjzpkqzk9ejuxev76xcv0yr9yenpnzx7te2kx46s93hlht
-					</CardFooter>
 				</div>
 			</Card>
 		</div>
