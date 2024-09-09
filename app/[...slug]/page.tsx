@@ -1,6 +1,6 @@
 "use client";
+import React, { useEffect, useState } from "react";
 import supabase from "../utils/supabase/client";
-import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -12,9 +12,15 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-
 import { Label } from "@/components/ui/label";
 import { Zap, Share2 } from "lucide-react";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogClose,
+} from "@/components/ui/dialog";
 
 type UserData = {
 	userId: string;
@@ -30,7 +36,8 @@ export default function PersonalityAnalyzer() {
 	const pathname = usePathname().replace(/^\/+/, "");
 	const [loading, setLoading] = useState(true);
 	const [userData, setUserData] = useState<UserData | null>(null);
-	const [copySuccess, setCopySuccess] = useState(false); // コピー成功の状態を追加
+	const [copySuccess, setCopySuccess] = useState(false);
+	const [showDonatePopup, setShowDonatePopup] = useState(false);
 
 	useEffect(() => {
 		const stars = 50;
@@ -88,7 +95,6 @@ export default function PersonalityAnalyzer() {
 				userRoast: data.user_roast,
 				relayServer: data.relay_server,
 			};
-			// console.log("User data:", formattedUserData);
 			setUserData(formattedUserData);
 			setLoading(false);
 		};
@@ -117,6 +123,10 @@ export default function PersonalityAnalyzer() {
 				})
 				.catch((error) => console.error("Error copying to clipboard", error));
 		}
+	};
+
+	const handleDonate = () => {
+		setShowDonatePopup(true);
 	};
 
 	if (loading) {
@@ -151,7 +161,7 @@ export default function PersonalityAnalyzer() {
 						<img
 							src={userData.userPicture || ""}
 							alt="User Icon"
-							className=" h-32 rounded-full"
+							className="h-32 rounded-full"
 						/>
 						<div className="text-purple-100 text-center">
 							<h2 className="text-2xl font-bold py-2">@{userData.userId}</h2>
@@ -159,16 +169,16 @@ export default function PersonalityAnalyzer() {
 								className="text-sm font-semibold py-2 cursor-pointer hover:text-purple-300"
 								onClick={() => {
 									navigator.clipboard.writeText(userData.userNpub).then(() => {
-										setCopySuccess(true); // コピー成功時に状態を更新
-										setTimeout(() => setCopySuccess(false), 2000); // 2秒後にメッセージを消す
+										setCopySuccess(true);
+										setTimeout(() => setCopySuccess(false), 2000);
 									});
 								}}
 							>
 								#{userData.userNpub}
 							</div>
 							{copySuccess && (
-								<p className="text-green-500 py-2">Coppied npub!</p>
-							)}{" "}
+								<p className="text-green-500 py-2">Copied npub!</p>
+							)}
 							<p className="text-sm">{userData.userAbst}</p>
 						</div>
 					</div>
@@ -181,9 +191,7 @@ export default function PersonalityAnalyzer() {
 						</div>
 					</div>
 					<Button
-						onClick={() => {
-							/* setIsPremium(true) */
-						}}
+						onClick={handleDonate}
 						className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-bold py-2 px-4 rounded-lg shadow-lg hover:shadow-orange-500/50 transition-all duration-300 transform hover:scale-105"
 					>
 						Donate <Zap className="ml-2 h-4 w-4 animate-pulse" />
@@ -195,10 +203,41 @@ export default function PersonalityAnalyzer() {
 						Share Analysis <Share2 className="ml-2 h-4 w-4" />
 					</Button>
 				</CardContent>
-				<CardFooter className="text-center text-purple-400 text-sm">
-					Made by @maobushi
-				</CardFooter>
+				<Link href="https://x.com/maobushi">
+					<CardFooter className="text-center text-purple-400 text-sm">
+						Made by @maobushi
+					</CardFooter>
+				</Link>
 			</Card>
+
+			<Dialog open={showDonatePopup} onOpenChange={setShowDonatePopup}>
+				<DialogContent className="bg-gray-900 text-purple-50 border-purple-500">
+					<DialogHeader>
+						<DialogTitle className="text-2xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
+							Donate
+						</DialogTitle>
+					</DialogHeader>
+					<div className="space-y-4">
+						<div>
+							<Label className="text-purple-300">Bitcoin Address</Label>
+							<div className="bg-gray-800/50 border border-purple-500 rounded-lg p-2 text-purple-100 break-all">
+								bc1qmpsd298hs9anwetalnrntq55fen994mht60w5d
+							</div>
+						</div>
+						<div>
+							<Label className="text-purple-300">Lightning Network</Label>
+							<div className="bg-gray-800/50 border border-purple-500 rounded-lg p-2 text-purple-100 break-all">
+								secretbeef91@walletofsatoshi.com
+							</div>
+						</div>
+					</div>
+					<DialogClose asChild>
+						<Button className="mt-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white">
+							Close
+						</Button>
+					</DialogClose>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }
