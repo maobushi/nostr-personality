@@ -13,7 +13,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Zap, Share2 } from "lucide-react";
+import { Zap, Share2, Check } from "lucide-react";
 import {
 	Dialog,
 	DialogContent,
@@ -21,6 +21,7 @@ import {
 	DialogTitle,
 	DialogClose,
 } from "@/components/ui/dialog";
+import { Toast } from "@/components/ui/toast";
 
 type UserData = {
 	userId: string;
@@ -32,14 +33,15 @@ type UserData = {
 };
 
 export default function PersonalityAnalyzer() {
-	const router = useRouter();
+  const router = useRouter();
 	const pathname = usePathname().replace(/^\/+/, "");
 	const [loading, setLoading] = useState(true);
 	const [userData, setUserData] = useState<UserData | null>(null);
 	const [copySuccess, setCopySuccess] = useState(false);
 	const [showDonatePopup, setShowDonatePopup] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
-	useEffect(() => {
+  useEffect(() => {
 		const stars = 50;
 		const starsContainer = document.createElement("div");
 		starsContainer.className =
@@ -102,34 +104,21 @@ export default function PersonalityAnalyzer() {
 		fetchUserData();
 	}, [pathname, router]);
 
-	const handleShare = () => {
+  const handleShare = () => {
 		if (!userData) return;
 
-		const shareText = `Check out my Nostr Personality Analysis!\n\nRoast: ${userData.userRoast}\n\nAnalyze your own Nostr personality at https://nostr-analyzer.example.com`;
-
-		if (navigator.share) {
-			navigator
-				.share({
-					title: "My Nostr Personality Analysis",
-					text: shareText,
-					url: "https://nostr-analyzer.example.com",
-				})
-				.catch((error) => console.error("Error sharing", error));
-		} else {
-			navigator.clipboard
-				.writeText(shareText)
-				.then(() => {
-					alert("Analysis copied to clipboard! Share it with your friends.");
-				})
-				.catch((error) => console.error("Error copying to clipboard", error));
-		}
+		const currentUrl = window.location.href;
+		navigator.clipboard.writeText(currentUrl).then(() => {
+			setShowToast(true);
+			setTimeout(() => setShowToast(false), 3000);
+		});
 	};
 
-	const handleDonate = () => {
+  const handleDonate = () => {
 		setShowDonatePopup(true);
 	};
 
-	if (loading) {
+  if (loading) {
 		return (
 			<div className="text-3xl loading-screen bg-gradient-to-br from-black via-purple-900 to-black flex items-center justify-center min-h-screen font-bold">
 				Loading...
@@ -137,36 +126,38 @@ export default function PersonalityAnalyzer() {
 		);
 	}
 
-	if (!userData) {
+  if (!userData) {
 		return null;
 	}
 
-	return (
+  return (
 		<div className="min-h-screen bg-gradient-to-br from-black via-purple-900 to-black flex items-center justify-center p-4 overflow-x-hidden">
 			<div className="absolute inset-0 bg-[url('/placeholder.svg?height=800&width=800')] bg-repeat opacity-10 z-0"></div>
-			<Card className="w-full max-w-4xl bg-gray-900/80 text-purple-50 border-purple-500 shadow-2xl shadow-purple-500/20 backdrop-blur-sm relative overflow-hidden z-10">
+			<Card className="w-full max-w-md bg-gray-900/80 text-purple-50 border-purple-500 shadow-2xl shadow-purple-500/20 backdrop-blur-sm relative overflow-hidden z-10">
 				<div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 animate-gradient"></div>
 				<Link href="/">
 					<CardHeader className="border-b border-purple-700">
-						<CardTitle className="text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
+						<CardTitle className="text-2xl md:text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
 							Nostr Personality Analyzer
 						</CardTitle>
-						<CardDescription className="text-center text-purple-300">
+						<CardDescription className="text-center text-purple-300 text-sm md:text-base">
 							Discover insights from your Nostr posts
 						</CardDescription>
 					</CardHeader>
 				</Link>
-				<CardContent className="space-y-6 mt-6">
+				<CardContent className="space-y-4 mt-4">
 					<div className="flex flex-col items-center">
 						<img
 							src={userData.userPicture || ""}
 							alt="User Icon"
-							className="h-32 rounded-full"
+							className="h-24 md:h-32 rounded-full"
 						/>
 						<div className="text-purple-100 text-center">
-							<h2 className="text-2xl font-bold py-2">@{userData.userId}</h2>
+							<h2 className="text-xl md:text-2xl font-bold py-2">
+								@{userData.userId}
+							</h2>
 							<div
-								className="text-sm font-semibold py-2 cursor-pointer hover:text-purple-300"
+								className="text-xs md:text-sm font-semibold py-1 cursor-pointer hover:text-purple-300"
 								onClick={() => {
 									navigator.clipboard.writeText(userData.userNpub).then(() => {
 										setCopySuccess(true);
@@ -177,16 +168,16 @@ export default function PersonalityAnalyzer() {
 								#{userData.userNpub}
 							</div>
 							{copySuccess && (
-								<p className="text-green-500 py-2">Copied npub!</p>
+								<p className="text-green-500 py-1 text-xs">Copied npub!</p>
 							)}
-							<p className="text-sm">{userData.userAbst}</p>
+							<p className="text-xs md:text-sm">{userData.userAbst}</p>
 						</div>
 					</div>
 					<div className="space-y-2">
-						<Label className="text-purple-300 text-lg font-semibold">
+						<Label className="text-purple-300 text-base md:text-lg font-semibold">
 							Roast
 						</Label>
-						<div className="bg-gray-800/50 border border-purple-500 rounded-lg p-4 text-purple-100">
+						<div className="bg-gray-800/50 border border-purple-500 rounded-lg p-3 text-purple-100 text-sm">
 							{userData.userRoast}
 						</div>
 					</div>
@@ -204,7 +195,7 @@ export default function PersonalityAnalyzer() {
 					</Button>
 				</CardContent>
 				<Link href="https://x.com/maobushi">
-					<CardFooter className="text-center text-purple-400 text-sm">
+					<CardFooter className="text-center text-purple-400 text-xs md:text-sm">
 						Made by @maobushi
 					</CardFooter>
 				</Link>
@@ -213,20 +204,20 @@ export default function PersonalityAnalyzer() {
 			<Dialog open={showDonatePopup} onOpenChange={setShowDonatePopup}>
 				<DialogContent className="bg-gray-900 text-purple-50 border-purple-500">
 					<DialogHeader>
-						<DialogTitle className="text-2xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
+						<DialogTitle className="text-xl md:text-2xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
 							Donate
 						</DialogTitle>
 					</DialogHeader>
 					<div className="space-y-4">
 						<div>
 							<Label className="text-purple-300">Bitcoin Address</Label>
-							<div className="bg-gray-800/50 border border-purple-500 rounded-lg p-2 text-purple-100 break-all">
+							<div className="bg-gray-800/50 border border-purple-500 rounded-lg p-2 text-purple-100 break-all text-xs md:text-sm">
 								bc1qmpsd298hs9anwetalnrntq55fen994mht60w5d
 							</div>
 						</div>
 						<div>
 							<Label className="text-purple-300">Lightning Network</Label>
-							<div className="bg-gray-800/50 border border-purple-500 rounded-lg p-2 text-purple-100 break-all">
+							<div className="bg-gray-800/50 border border-purple-500 rounded-lg p-2 text-purple-100 break-all text-xs md:text-sm">
 								secretbeef91@walletofsatoshi.com
 							</div>
 						</div>
@@ -238,6 +229,12 @@ export default function PersonalityAnalyzer() {
 					</DialogClose>
 				</DialogContent>
 			</Dialog>
+
+			{showToast && (
+				<Toast className="fixed bottom-4 right-4 bg-green-500 text-white p-2 rounded-md flex items-center">
+					<Check className="mr-2" /> URL Copied!
+				</Toast>
+			)}
 		</div>
 	);
 }
