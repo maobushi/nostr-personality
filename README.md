@@ -27,7 +27,7 @@ Your support is greatly appreciated!
 ## Installation
 1. Clone the repository.
    ```bash
-   git clone https://github.com/yourusername/nostr-personality-analyzer.git
+   git clone git@github.com:maobushi/nostr-personality.git
    ```
 2. Navigate to the directory.
    ```bash
@@ -45,8 +45,10 @@ Your support is greatly appreciated!
    ```bash
    pnpm run dev
    ```
+
 ## Usage
 Once the application is running, access it in your browser at `http://localhost:3000`. You can start the personality analysis by entering a Nostr npub.
+
 ## Contributing
 Contributions are welcome! If you find a bug or have a feature suggestion, please create an issue.
 
