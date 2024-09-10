@@ -37,11 +37,16 @@ Your support is greatly appreciated!
    ```bash
    pnpm install
    ```
-4. Setting up Database Client.
+4. Add `.env` file
+   `OPENAI_API_KEY`
+   `NEXT_PUBLIC_SUPABASE_URL`
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+5. Setting up Database Client.
    ```bash
    npx supabase login
    ```
-5. Start the development server.
+6. Start the development server.
    ```bash
    pnpm run dev
    ```
