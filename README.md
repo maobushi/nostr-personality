@@ -57,5 +57,9 @@ Once the application is running, access it in your browser at `http://localhost:
 ## Contributing
 Contributions are welcome! If you find a bug or have a feature suggestion, please create an issue.
 
+## Special Thanks
+[@renchon](https://x.com/ren_Nevermind)
+Massive shoutout for letting me crash at your pad during my dev marathon. Without your roof, I might've been coding under the stars (romantic, but not great for WiFi). 
+
 ## License
 Nostr Personality Analyzer © 2024 by maobushi is licensed under Creative Commons Attribution-ShareAlike 4.0 International
