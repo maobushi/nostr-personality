@@ -1,20 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import WebSocket from "ws";
-import { nip19 } from "nostr-tools";
+import { nip19, NostrEvent } from "nostr-tools";
 
 interface RequestBody {
 	npub: string;
 	relayUrl: string;
-}
-
-interface NostrEvent {
-	id: string;
-	pubkey: string;
-	created_at: number;
-	kind: number;
-	tags: string[][];
-	content: string;
-	sig: string;
 }
 
 interface UserData {
