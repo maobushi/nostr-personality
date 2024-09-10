@@ -57,6 +57,9 @@ Once the application is running, access it in your browser at `http://localhost:
 ## Contributing
 Contributions are welcome! If you find a bug or have a feature suggestion, please create an issue.
 
+## Note
+Note: As this was created in just about a day, I am aware that there are various bugs. (For example, using "use client" for almost everything despite using Next.js, thus not utilizing SSR; outputting results in Japanese even when tweeting in English; for some reason, it blacks out and doesn't display when run locally, but somehow displays when built, etc.) I can't be very involved, but bug fixes and refactoring are very welcome. It would be a great help.
+
 ## Special Thanks
 [@renchon](https://x.com/ren_Nevermind)
 Massive shoutout for letting me crash at your pad during my dev marathon. Without your roof, I might've been coding under the stars (romantic, but not great for WiFi). 
